@@ -1,21 +1,23 @@
 # DEVLOG - AI Spend Audit Development
 
-## Day 1 — 2026-07-14
-**Hours worked:** 2
+## Day 1 — 2026-07-15
+**Hours worked:** 3
 **What I did:**
-- Created the project directory structure and config files including `tsconfig.json`, `tailwind.config.js`, `postcss.config.js`, and `next.config.js`.
-- Configured project dependencies inside `package.json` utilizing Next.js 15, React 19, TypeScript, Vitest, Mongoose, and Resend.
-- Researched and verified official pricing pages of all required vendors (Cursor, Copilot, Claude, ChatGPT, Gemini, Windsurf, OpenAI, Anthropic) and documented them in `PRICING_DATA.md`.
-- Implemented core pricing data configurations in `src/config/pricing.ts`.
-- Implemented the core audit calculation engine in `src/lib/auditEngine.ts` handling seat-minimum violations, tool redundancy detection, and API workload optimization logic.
-- Created robust unit tests for the audit engine calculations under `tests/auditEngine.test.ts`.
+- Restructured workspace from Next.js + TypeScript to MERN stack (React frontend + Express Node.js backend) in plain JavaScript, as requested.
+- Cleaned up previous Next.js files and empty TypeScript files.
+- Formulated the workspace architecture inside `ARCHITECTURE.md`.
+- Created `backend/` directory structure and configured `backend/package.json` with Express, CORS, Mongoose, Resend, and Vitest.
+- Populated static pricing configurations inside `backend/config/pricing.js` and verified references against vendor urls in `PRICING_DATA.md`.
+- Wrote the core audit calculation rules engine in `backend/lib/auditEngine.js` using ES6 imports.
+- Created `backend/tests/auditEngine.test.js` with 5 detailed test cases covering calculations.
+- Updated documentation files: `PRICING_DATA.md`, `PROMPTS.md`, and `TESTS.md`.
 
 **What I learned:**
-- Managed peer dependency resolution between Next.js 15 and stable React 19 in `package.json`.
-- Separating calculations logic from LLM generation ensures deterministic audit math and high reliability, while using LLM solely for summarizing results provides a clean conversational output.
+- Swapped next-router logic for simple Express routing to maintain clear separation of concerns in pure JavaScript.
+- Configured Vitest to run natively on ES6 Javascript modules by setting `"type": "module"` in `package.json`.
 
 **Blockers / what I'm stuck on:**
-- None.
+- Waiting for backend npm dependencies to finish installing.
 
 **Plan for tomorrow:**
-- Day 2: Implement MongoDB database connections (via Mongoose), database schemas, Resend email client integration, Gemini API integration, and RESTful API routes (`/api/audit`, `/api/lead`, `/api/audit/[id]`).
+- Day 2: Implement Mongoose database helper and Audit/Lead schemas, configure the Gemini LLM client for summary generation, set up the Resend email agent, and construct the Express API endpoints.

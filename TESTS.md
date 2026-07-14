@@ -1,16 +1,16 @@
 # AI Spend Audit - Test Suite Documentation
 
-This document describes the automated test coverage and execution instructions for the AI Spend Audit application.
+This document describes the automated test coverage and execution instructions for the MERN AI Spend Audit application.
 
 ## Test Suite Overview
 
-We use **Vitest** as our primary testing framework. The core audit logic is covered by unit tests to ensure mathematical accuracy and defensible optimization recommendations.
+We use **Vitest** in the backend directory as our testing framework. The core audit logic is covered by unit tests to ensure mathematical accuracy and defensible optimization recommendations.
 
 ---
 
 ## Test List
 
-### 1. `tests/auditEngine.test.ts`
+### 1. `backend/tests/auditEngine.test.js`
 This test suite covers the core calculation rules applied to users' tool stacks.
 
 - **Test Case 1**: Solo Cursor Business User Downgrade
@@ -28,9 +28,10 @@ This test suite covers the core calculation rules applied to users' tool stacks.
 
 ## Running the Tests
 
-To run the automated tests locally, run:
+To run the automated tests locally, navigate to the backend directory and run:
 
 ```bash
+cd backend
 npm run test
 ```
 
