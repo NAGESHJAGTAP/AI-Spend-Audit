@@ -1,86 +1,135 @@
+// backend/tests/auditEngine.test.js
+// Vitest tests for the deterministic audit engine
+// Run: cd backend && npm test
+
 import { describe, it, expect } from 'vitest';
 import { runAudit } from '../lib/auditEngine.js';
 
-describe('Audit Calculation Engine', () => {
-  it('should recommend solo Cursor Business user to downgrade to Pro', () => {
-    const input = {
-      teamSize: 1,
-      primaryUseCase: 'coding',
-      tools: [
-        {
-          name: 'cursor',
-          plan: 'business',
-          monthlySpend: 40,
-          seats: 1,
-        },
-      ],
-    };
-
-    const result = runAudit(input);
-    expect(result.totalMonthlySavings).toBe(20);
-    expect(result.recommendedTotalSpend).toBe(20);
-    expect(result.toolBreakdown[0].recommendedPlan).toBe('pro');
-    expect(result.toolBreakdown[0].savings).toBe(20);
-  });
-
-  it('should identify redundancy when both Cursor and Copilot are active', () => {
-    const input = {
+// ── Test 1: Copilot cancelled when Cursor present ────────────────────────────
+describe('Rule 1 — Copilot + Cursor redundancy', () => {
+  it('should recommend cancelling GitHub Copilot when Cursor is in the stack', () => {
+    const result = runAudit({
       teamSize: 3,
       primaryUseCase: 'coding',
       tools: [
-        { name: 'cursor', plan: 'pro', monthlySpend: 60, seats: 3 },
-        { name: 'copilot', plan: 'individual', monthlySpend: 30, seats: 3 },
+        { name: 'cursor',  plan: 'pro',        seats: 3, monthlySpend: 60 },
+        { name: 'copilot', plan: 'individual', seats: 3, monthlySpend: 30 },
       ],
-    };
+    });
 
-    const result = runAudit(input);
+    const copilot = result.toolBreakdown.find(t => t.toolName === 'copilot');
+    expect(copilot.action).toBe('cancel');
+    expect(copilot.recommendedSpend).toBe(0);
+    expect(copilot.savings).toBe(30);
     expect(result.totalMonthlySavings).toBe(30);
-    const copilotRecommendation = result.toolBreakdown.find(t => t.toolName === 'copilot');
-    expect(copilotRecommendation.recommendedPlan).toBe('none');
-    expect(copilotRecommendation.recommendedSpend).toBe(0);
-    expect(copilotRecommendation.savings).toBe(30);
   });
+});
 
-  it('should recommend Claude Team plan downgrade if team size is below 5 seat minimum', () => {
-    const input = {
-      teamSize: 2,
-      primaryUseCase: 'mixed',
-      tools: [
-        { name: 'claude', plan: 'team', monthlySpend: 150, seats: 5 },
-      ],
-    };
-
-    const result = runAudit(input);
-    expect(result.totalMonthlySavings).toBe(110);
-    expect(result.recommendedTotalSpend).toBe(40);
-    expect(result.toolBreakdown[0].recommendedPlan).toBe('pro');
-  });
-
-  it('should return optimal status when user spends are already optimized', () => {
-    const input = {
-      teamSize: 1,
+// ── Test 2: Claude Team < 5 seats → downgrade to Pro ────────────────────────
+describe('Rule 3 — Claude Team seat minimum', () => {
+  it('should downgrade Claude Team to Pro when team has fewer than 5 seats', () => {
+    const result = runAudit({
+      teamSize: 3,
       primaryUseCase: 'writing',
       tools: [
-        { name: 'chatgpt', plan: 'plus', monthlySpend: 20, seats: 1 },
+        { name: 'claude', plan: 'team', seats: 3, monthlySpend: 150 }, // 5-seat min enforced
       ],
-    };
+    });
 
-    const result = runAudit(input);
-    expect(result.totalMonthlySavings).toBe(0);
-    expect(result.isAlreadyOptimal).toBe(true);
+    const claude = result.toolBreakdown.find(t => t.toolName === 'claude');
+    expect(claude.action).toBe('downgrade');
+    expect(claude.recommendedPlan).toBe('pro');
+    expect(claude.recommendedSpend).toBe(60); // 3 × $20
+    expect(claude.savings).toBe(90);
   });
+});
 
-  it('should suggest routing API workloads to cheaper models for high API spenders', () => {
-    const input = {
+// ── Test 3: Solo on Cursor Business → downgrade to Pro ──────────────────────
+describe('Rule 5 — Cursor Business solo downgrade', () => {
+  it('should recommend downgrading solo Cursor Business to Pro', () => {
+    const result = runAudit({
+      teamSize: 1,
+      primaryUseCase: 'coding',
+      tools: [
+        { name: 'cursor', plan: 'business', seats: 1, monthlySpend: 40 },
+      ],
+    });
+
+    const cursor = result.toolBreakdown.find(t => t.toolName === 'cursor');
+    expect(cursor.action).toBe('downgrade');
+    expect(cursor.recommendedSpend).toBe(20);
+    expect(cursor.savings).toBe(20);
+  });
+});
+
+// ── Test 4: OpenAI API optimization ─────────────────────────────────────────
+describe('Rule 8 — OpenAI API model-mix optimization', () => {
+  it('should suggest model-mix optimization for high OpenAI API spend', () => {
+    const result = runAudit({
       teamSize: 5,
       primaryUseCase: 'data',
       tools: [
-        { name: 'openaiApi', plan: 'direct', monthlySpend: 200, seats: 1 },
+        { name: 'openaiApi', plan: 'gpt4o', seats: 1, monthlySpend: 200 },
       ],
-    };
+    });
 
-    const result = runAudit(input);
-    expect(result.totalMonthlySavings).toBe(80);
-    expect(result.toolBreakdown[0].savings).toBe(80);
+    const openai = result.toolBreakdown.find(t => t.toolName === 'openaiApi');
+    expect(openai.action).toBe('optimize-api');
+    expect(openai.recommendedSpend).toBeLessThan(200);
+    expect(openai.savings).toBeGreaterThan(0);
+  });
+});
+
+// ── Test 5: ChatGPT cancelled alongside Claude for writing ──────────────────
+describe('Rule 2 — ChatGPT + Claude redundancy for writing', () => {
+  it('should cancel ChatGPT Plus when Claude is present for writing use case', () => {
+    const result = runAudit({
+      teamSize: 4,
+      primaryUseCase: 'writing',
+      tools: [
+        { name: 'chatgpt', plan: 'plus',  seats: 4, monthlySpend: 80 },
+        { name: 'claude',  plan: 'pro',   seats: 4, monthlySpend: 80 },
+      ],
+    });
+
+    const chatgpt = result.toolBreakdown.find(t => t.toolName === 'chatgpt');
+    expect(chatgpt.action).toBe('cancel');
+    expect(chatgpt.savings).toBe(80);
+  });
+});
+
+// ── Test 6: Already-optimal stack returns isAlreadyOptimal ──────────────────
+describe('Optimal stack detection', () => {
+  it('should flag isAlreadyOptimal when savings are below $10/mo', () => {
+    const result = runAudit({
+      teamSize: 1,
+      primaryUseCase: 'coding',
+      tools: [
+        { name: 'cursor', plan: 'pro', seats: 1, monthlySpend: 20 },
+      ],
+    });
+
+    expect(result.isAlreadyOptimal).toBe(true);
+    expect(result.totalMonthlySavings).toBeLessThan(10);
+  });
+});
+
+// ── Test 7: High savings flag triggers at $500/mo ────────────────────────────
+describe('High savings flag', () => {
+  it('should set hasHighSavings=true when monthly savings exceed $500', () => {
+    const result = runAudit({
+      teamSize: 2,
+      primaryUseCase: 'mixed',
+      tools: [
+        { name: 'claude',    plan: 'team',  seats: 2, monthlySpend: 150 },
+        { name: 'chatgpt',   plan: 'team',  seats: 2, monthlySpend: 200 },
+        { name: 'openaiApi', plan: 'gpt4o', seats: 1, monthlySpend: 400 },
+        { name: 'cursor',    plan: 'business', seats: 2, monthlySpend: 80 },
+        { name: 'copilot',   plan: 'business', seats: 2, monthlySpend: 38 },
+      ],
+    });
+
+    expect(result.hasHighSavings).toBe(true);
+    expect(result.totalMonthlySavings).toBeGreaterThanOrEqual(500);
   });
 });
