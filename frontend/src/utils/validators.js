@@ -25,7 +25,6 @@ export function validateLead(lead) {
   if (!lead.name || lead.name.trim().length < 2) errors.name = 'Name is required';
   if (!lead.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email))
     errors.email = 'Valid email required';
-  if (!lead.company || lead.company.trim().length < 1)
-    errors.company = 'Company name is required';
+  // Company is optional
   return { valid: Object.keys(errors).length === 0, errors };
 }
