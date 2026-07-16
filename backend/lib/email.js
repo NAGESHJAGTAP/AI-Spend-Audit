@@ -1,16 +1,40 @@
-// backend/lib/email.js
-// Transactional email via Resend (free tier: 3,000 emails/mo)
-
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM   = process.env.EMAIL_FROM || 'AI Spend Audit <audit@aispendaudit.com>';
+// ── Lazy Resend client ───────────────────────────────────────────────────────
+// We initialise lazily (not at module load time) because ES module imports are
+// hoisted — env vars from dotenv may not be populated when this module first
+// evaluates. Reading inside a function guarantees dotenv has already run.
+let _resend = undefined;
+let _warned  = false;
+
+function getResend() {
+  if (_resend !== undefined) return _resend;
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (apiKey) {
+    _resend = new Resend(apiKey);
+  } else {
+    _resend = null;
+    if (!_warned) {
+      _warned = true;
+      console.warn(
+        '[email] RESEND_API_KEY is not set — transactional emails skipped. ' +
+        'Add it to backend/.env to enable sending.'
+      );
+    }
+  }
+  return _resend;
+}
+
+const FROM = () => process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
 // ── Audit confirmation email ─────────────────────────────────────────────────
 export async function sendAuditEmail({ to, name, auditResult, shareUrl }) {
+  const resend = getResend();
+  if (!resend) return { ok: false, error: 'RESEND_API_KEY not configured' };
+
   const { totalMonthlySavings, totalAnnualSavings, toolBreakdown, hasHighSavings } = auditResult;
 
-  const toolRows = toolBreakdown.map(t =>
+  const toolRows = (toolBreakdown || []).map(t =>
     `<tr>
       <td style="padding:8px 12px;border-bottom:1px solid #1e293b">${t.toolName}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #1e293b">$${t.currentSpend}/mo</td>
@@ -69,7 +93,7 @@ export async function sendAuditEmail({ to, name, auditResult, shareUrl }) {
 
   try {
     await resend.emails.send({
-      from: FROM,
+      from:    FROM(),
       to,
       subject: `Your AI stack saves $${totalAnnualSavings}/yr — here's how`,
       html,
