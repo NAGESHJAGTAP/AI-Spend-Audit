@@ -27,7 +27,19 @@ export function runAudit(input) {
 
   for (const tool of tools) {
     const { name, plan, seats = 1, monthlySpend: rawSpend = 0 } = tool;
-    const monthlySpend = Number(rawSpend);
+    let monthlySpend = Number(rawSpend || 0);
+
+    // Auto-calculate subscription tools if spend is omitted/zero
+    if (!monthlySpend || monthlySpend === 0) {
+      const rates = PRICING[name];
+      if (rates && typeof rates === 'object') {
+        const rate = rates[plan];
+        if (typeof rate === 'number') {
+          monthlySpend = rate * seats;
+        }
+      }
+    }
+
     originalTotalSpend += monthlySpend;
 
     let recommendedPlan  = plan;
@@ -133,14 +145,18 @@ export function runAudit(input) {
     // ── RULE 11: Standard seat count alignment ────────────────────────────
     else {
       const rates = PRICING[name];
-      if (rates && typeof rates === 'object' && !('inputPerMillion' in Object.values(rates)[0] ?? {})) {
-        const rate = rates[plan];
-        if (rate !== undefined && rate > 0) {
-          const expected = rate * seats;
-          if (monthlySpend > expected + 1) {
-            recommendedSpend = expected;
-            action = 'correct-billing';
-            reason = `Your reported spend ($${monthlySpend}/mo) exceeds the standard retail rate of $${rate}/seat × ${seats} seats = $${expected}/mo. Verify your invoice for billing errors.`;
+      if (rates && typeof rates === 'object') {
+        const firstVal = Object.values(rates)[0];
+        const isApi = firstVal && typeof firstVal === 'object' && 'inputPerMillion' in firstVal;
+        if (!isApi) {
+          const rate = rates[plan];
+          if (rate !== undefined && rate > 0) {
+            const expected = rate * seats;
+            if (monthlySpend > expected + 1) {
+              recommendedSpend = expected;
+              action = 'correct-billing';
+              reason = `Your reported spend ($${monthlySpend}/mo) exceeds the standard retail rate of $${rate}/seat × ${seats} seats = $${expected}/mo. Verify your invoice for billing errors.`;
+            }
           }
         }
       }
