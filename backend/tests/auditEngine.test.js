@@ -123,7 +123,7 @@ describe('High savings flag', () => {
       tools: [
         { name: 'claude',    plan: 'team',  seats: 2, monthlySpend: 150 },
         { name: 'chatgpt',   plan: 'team',  seats: 2, monthlySpend: 200 },
-        { name: 'openaiApi', plan: 'gpt4o', seats: 1, monthlySpend: 400 },
+        { name: 'openaiApi', plan: 'gpt4o', seats: 1, monthlySpend: 600 },
         { name: 'cursor',    plan: 'business', seats: 2, monthlySpend: 80 },
         { name: 'copilot',   plan: 'business', seats: 2, monthlySpend: 38 },
       ],
