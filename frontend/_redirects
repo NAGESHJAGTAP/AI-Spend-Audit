@@ -1,0 +1,4 @@
+# Netlify redirects
+# Fix 404 on /share/:shareId by routing to backend OG route.
+/share/* https://ai-spend-audit-2-qijt.onrender.com/share/:splat 200
+
