@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "/share/*"
+  to = "https://ai-spend-audit-2-qijt.onrender.com/share/:splat"
+  status = 200
+
