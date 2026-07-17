@@ -1,9 +1,10 @@
 // src/api/auditApi.js
 // All API calls to the Express backend live here
 
-const API_URL = import.meta.env.VITE_API_URL;
-// Vite will replace env vars at build time
-const BASE_URL = `${API_URL}/api`;
+// Prefer explicit VITE_API_URL, otherwise default to same-origin.
+// This prevents `undefined/api/...` when the env var is missing after build.
+const API_URL = import.meta.env.VITE_API_URL || '';
+const BASE_URL = `${API_URL}/api`.replace(/\/api\/$/, '/api');
 
 /**
  * Submit spend data to get an audit result
