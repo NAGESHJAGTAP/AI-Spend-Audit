@@ -39,15 +39,28 @@ export function registerShareOgRoutes(app) {
       const title = `AI Spend Audit — Save $${annualSavings}/yr`;
       const description = `Potential savings: $${monthlySavings}/mo. Current: $${currentMonthly}/mo. View the anonymized breakdown.`;
 
-      const canonicalUrl = `${process.env.APP_URL || 'http://localhost:3000'}/share/${audit.shareId}`;
+      const deriveBaseUrl = () => {
+        if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, '');
 
-      // Minimal HTML with OG + Twitter tags.
-      // Use a static og:image; keeps it simple and works for previews.
+        const host = req.headers['x-forwarded-host'] || req.headers['host'];
+        const protoHeader = req.headers['x-forwarded-proto'];
+        const proto = Array.isArray(protoHeader)
+          ? protoHeader[0]
+          : protoHeader || (req.secure ? 'https' : 'http');
 
-      // For real browsers: redirect to the SPA route so React can mount.
-      // For social bots: return OG HTML so link previews work.
+        if (!host) return '';
+        return `${proto}://${host}`.replace(/\/$/, '');
+      };
+
+      const baseUrl = deriveBaseUrl() || '';
+      if (!process.env.APP_URL && !baseUrl) {
+        console.warn('[shareOg] Missing APP_URL and could not derive base URL from headers.');
+      }
+
+      const canonicalUrl = `${baseUrl}/share/${audit.shareId}`;
+
       if (!isSocialBot) {
-        const spaUrl = `${process.env.APP_URL || 'http://localhost:3000'}/share/${audit.shareId}`;
+        const spaUrl = canonicalUrl || `/share/${audit.shareId}`;
         return res.redirect(302, spaUrl);
       }
 
@@ -63,12 +76,12 @@ export function registerShareOgRoutes(app) {
   <meta property="og:type" content="website" />
   <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
   <meta property="og:site_name" content="AI Spend Audit" />
-  <meta property="og:image" content="${escapeHtml(`${process.env.APP_URL || 'http://localhost:3000'}/og-image.png`)}" />
+  <meta property="og:image" content="${escapeHtml(`${baseUrl}/og-image.png`)}" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
-  <meta name="twitter:image" content="${escapeHtml(`${process.env.APP_URL || 'http://localhost:3000'}/og-image.png`)}" />
+  <meta name="twitter:image" content="${escapeHtml(`${baseUrl}/og-image.png`)}" />
 
 </head>
 <body>
@@ -89,4 +102,3 @@ export function registerShareOgRoutes(app) {
 
   app.use(router);
 }
-
