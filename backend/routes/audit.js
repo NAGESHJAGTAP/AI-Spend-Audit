@@ -65,16 +65,28 @@ router.post('/', auditLimiter, async (req, res) => {
 
 // ── GET /api/audit/share/:shareId ─────────────────────────────────────────────
 router.get('/share/:shareId', async (req, res) => {
+  // Hard timeout so share pages never get stuck on loading.
+  // If MongoDB stalls, fail fast with 504.
+  const timeoutMs = Number(process.env.SHARE_ROUTE_TIMEOUT_MS || 3500);
+
+  const timeout = setTimeout(() => {
+    return res.status(504).json({ error: 'Timed out loading shared audit.' });
+  }, timeoutMs);
+
   try {
+    // Fast-fail query: only fetch what the UI needs.
     const audit = await Audit.findOne(
       { shareId: req.params.shareId },
-      '-ip -leadId'            // strip PII fields from public response
-    );
+      '-ip -leadId'
+    ).lean();
+
     if (!audit) return res.status(404).json({ error: 'Audit not found.' });
     return res.json(audit);
   } catch (err) {
     console.error('[GET /audit/share]', err);
     return res.status(500).json({ error: 'Failed to load audit.' });
+  } finally {
+    clearTimeout(timeout);
   }
 });
 
