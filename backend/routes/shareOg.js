@@ -60,9 +60,12 @@ export function registerShareOgRoutes(app) {
       const canonicalUrl = `${baseUrl}/share/${audit.shareId}`;
 
       if (!isSocialBot) {
-        const spaUrl = canonicalUrl || `/share/${audit.shareId}`;
-        return res.redirect(302, spaUrl);
+        // For real browsers, send them to the SPA route.
+        // IMPORTANT: do not redirect back to this same OG route (which can cause loops
+        // with platform redirects), so keep it path-only.
+        return res.redirect(302, `/share/${audit.shareId}`);
       }
+
 
       res.type('html').send(`<!doctype html>
 <html lang="en">
