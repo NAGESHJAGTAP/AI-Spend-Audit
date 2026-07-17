@@ -2,10 +2,8 @@
 
 AI Spend Audit is a free, premium MERN web application that acts as "Mint for AI tool spend." It analyzes a team's AI subscriptions (Cursor, ChatGPT, Claude, Gemini, etc.), programmatically detects redundancies, seat inefficiencies, and plan mismatches, and synthesizes the findings into a clean savings report with an AI-generated advisor summary.
 
-Live Deployed URL: **[https://ai-spend-audit.vercel.app](https://ai-spend-audit.vercel.app)** 
-
 ---
-Frontend Deployed URL: **https://ai-spend-audit.vercel.app**
+Frontend Deployed URL: **https://ai-spend-audit0.netlify.app/**
 
 ---
 
