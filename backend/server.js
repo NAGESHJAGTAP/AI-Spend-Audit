@@ -9,6 +9,7 @@ import { connectDB } from './config/db.js';
 import auditRouter   from './routes/audit.js';
 import leadRouter    from './routes/lead.js';
 import summaryRouter from './routes/summary.js';
+import { registerShareOgRoutes } from './routes/shareOg.js';
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -38,6 +39,11 @@ app.use(express.json({ limit: '100kb' }));
 app.get('/health', (_, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 
 // ── API routes ───────────────────────────────────────────────────────────────
+// Server-rendered share page for social previews (OG/Twitter cards)
+// Route required: /share/:id
+registerShareOgRoutes(app);
+
+
 app.use('/api/audit',   auditRouter);
 app.use('/api/lead',    leadRouter);
 app.use('/api/summary', summaryRouter);
