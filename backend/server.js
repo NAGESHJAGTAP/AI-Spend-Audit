@@ -21,8 +21,12 @@ app.use(helmet());
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
+  // Deployed frontend origins (update as needed)
   process.env.APP_URL,
+  'https://ai-spend-audit.vercel.app',
+  'https://ai-spend-audit0.netlify.app',
 ].filter(Boolean);
+
 
 app.use(cors({
   origin: (origin, cb) => {
