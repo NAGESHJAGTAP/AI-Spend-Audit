@@ -9,7 +9,9 @@ export default defineConfig({
     proxy: {
       // Forward /api/* calls to the Express backend
       '/api': {
-        target: 'http://localhost:5000',
+        target: process.env.VITE_API_URL
+          ? process.env.VITE_API_URL.replace(/\/[\s\S]*$/, '')
+          : 'https://ai-spend-audit-2-qijt.onrender.com',
         changeOrigin: true,
       },
     },
