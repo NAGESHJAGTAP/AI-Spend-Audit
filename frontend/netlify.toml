@@ -1,5 +1,9 @@
+# Public share pages are served by this SPA.
+# Route /share/:shareId -> index.html so React can fetch /api/audit/share/:shareId
 [[redirects]]
   from = "/share/*"
-  to = "https://ai-spend-audit-2-qijt.onrender.com/share/:splat"
+  to = "/index.html"
   status = 200
+  force = true
+
 
