@@ -12,7 +12,7 @@ Backend Deployed URL : **https://ai-spend-audit-2-qijt.onrender.com/**
 
  
 ## Screen Recording / Screenshots
-- Demo Screen Recording: **[Walkthrough Video Link](https://youtube.com/)** *(replace with your Loom/YouTube walkthrough)*
+- Demo Screen Recording: **[Walkthrough Video Link](https://drive.google.com/file/d/1Al_brulA4heZJKuUgXA13wbHgvORh4f9/view?usp=sharing)** 
 
 ---
 
